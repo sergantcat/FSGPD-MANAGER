@@ -18,6 +18,7 @@ dotenv.config();
 
 const token = process.env.DISCORD_TOKEN;
 const clientId = process.env.CLIENT_ID;
+const db = process.env.DATABASE_URL
 
 if (!token || !clientId) {
   console.error('Error bot token and client id not configured Error code Delta 3');
