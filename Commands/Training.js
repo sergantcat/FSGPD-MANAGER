@@ -1,107 +1,55 @@
 // Greetings This cmd is not made by Ai 
-const {
-    SlashCommandBuilder,
-    ContainerBuilder,
-    SeparatorBuilder,
-    TextDisplayBuilder,
-    Colors,
-    MessageFlags,
-    AttachmentBuilder
-} = require("discord.js");
-
-const {Pool} = require(.../.../db.js)
-
 const {randomUUID} = require("crypto"); //This generates the Training id
+const {SlashCommandBuilder, MessageFlags} = require("discord.js");
+const db = require('../db')
+const{successContainer, failureContainer,trainingContainer,hasHostRole, postToChannel,MesssageFlags} = require('../utils/trainingComponents')
 
-const trainingId = randomUUID(); // This declares the randomUUID as trainingid
-
-const TRAINING_CHANNNEL_ID = process.env.TRAINING_CHANNNEL_ID // Sets the channel and Such
-
-const TRAINING_HOST_REMINDER_CHANNEL_ID = process.env.TRAINING_HOST_REMINDER_CHANNEL_ID
-
-
-const appemoji = '<:deniedemoji:1548978077848174632>';
-
-
-const TRAINING_HOST_IDS = (process.env.TRAINING_HOST_IDS || "")
-    .split(",")
-    .map((id) => id.trim())
-    .filter(Boolean);
-
-function hasAllowedRole(member) {
-    if (!member?.roles?.cache) return false;
-    return member.roles.cache.some((role) => TRAINING_HOST_IDS.includes(role.id));
-}
-
-
- 
 module.exports = {
-    data: new SlashCommandBuilder()
-        .setName("training")
-        .setDescription("[THP] alows to host a Training.")
-        .addStringOption(option =>
-            option
-            .setName('Training Type')
-            .setRequired(true)
-            .setDescription('Choose The Type of Training To host.')
-            .addChoices(
-         {name:'Combat Training', value:'combat_training'},
-         {name:'Knowledge Training', value:'Knowledge_training'}
-        )
-    ) 
+data: new SlashCommandBuilder()
+.setName('host-training')
+.setDescription('[THP] Command to host a Training')
+.addIntegerOption(o=>
+    o
+    .setName('time')
+    .setDescription('Unix Timestamp')
+    .setRequired(true)),
 
-      .addSubcommand((subcommand) =>
-		subcommand
-			.setName('training-cancel')
-			.setDescription('[THP] alows to cancel Trainings.') 
-            .addIntegerOption(option =>
-                option
-                .setName('Training')
-                .setDescription('Training you want to cancel')
-                .setAutocomplete(true)
-                .setRequired(true)
-               
+    async execute(interaction) {
+        if(!hasHostRole(interaction.member)){
+        return interaction.reply({
+             components:[failureContainer('Permission Denied','You do not have the Required Rank to Host Trainings.')],
+             flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral 
+         });
+        }
+    
+    await interaction.deferReply();
 
-            )
-        )
-			
-        .addSubcommand((subcommand) =>
-		subcommand
-			.setName('training-conclude')
-			.setDescription('[THP] alows to conclude Trainings.') 
-            .addIntegerOption(option =>
-                option
-                .setName('Training')
-                .setDescription('Training you want to conclude')
-                .setAutocomplete(true)
-                .setRequired(true)
-               
+    try {
+        const time = interaction.options.getInteger('time');
+        if (time * 1000 < Date.now()) {
+            return interaction.editReply({
+                components:[failureContainer('ScheduleFailed','That Unix Timestamp is in the past bro')],
+                flags: MessageFlags.IsComponentsV2
+            });
+        }
+        const id = randomUUID();
+        await db('trainings').insert({
+            id, host: interaction.user.id, time, status:'Scheduled', reminded:false
+        })
 
-            )
-        )
-       .addSubcommand((subcommand) =>
-		subcommand
-			.setName('training-conclude')
-			.setDescription('[THP] alows to conclude Trainings.') 
-            .addIntegerOption(option =>
-                option
-                .setName('Training')
-                .setDescription('Training you want to conclude')
-                .setAutocomplete(true)
-                .setRequired(true)
-               
+        const trainingMessage = await postToChannel(
+            interaction.client,
+            trainingContainer(interaction.user.id, id, time)
+        );
+        await trainingMessage.react('✅');
+        return interaction.editReply({ components:[successContainer('Training Scheduled succesfully', `ID: \`${id}\``)],flags :MessageFlags.IsComponentsV2});
 
-            )
-        ),
-        
-        async autocomplete(interaction) {
-        const focusedValue = interaction.options.getFocused();
-        
-        // Get the filtered database rows from our helper
-        const choices = await getTrainingChoices(focusedValue);
+}   catch (err) {
+    return interaction.editReply({
+        components:[failureContainer('Schedule Failed','An unexpected error occurred the bot is prob cooked')],
+        flags: MessageFlags.IsComponentsV2
+})
 
-        // Respond immediately to Discord
-        await interaction.respond(choices);
-         },
-
+} 
+}  
 }

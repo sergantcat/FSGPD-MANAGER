@@ -1,6 +1,9 @@
 const fs = require('fs');
 const path = require('path');
 const dotenv = require('dotenv');
+
+dotenv.config();
+
 const {
   Client,
   Collection,
@@ -11,14 +14,13 @@ const {
   TextDisplayBuilder,
   Colors
 } = require('discord.js');
-
-dotenv.config();
+const {startReminderLoop} = require('./utils/trainingReminders');
 
 
 
 const token = process.env.DISCORD_TOKEN;
 const clientId = process.env.CLIENT_ID;
-const db = process.env.DATABASE_URL
+
 
 if (!token || !clientId) {
   console.error('Error bot token and client id not configured Error code Delta 3');
@@ -91,7 +93,7 @@ async function registerCommands() {
 
 client.once('ready', async () => {
   console.log(`Logged in as ${client.user.tag}`);
-
+  startReminderLoop(client);
   await registerCommands();
 });
 
