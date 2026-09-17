@@ -67,7 +67,6 @@ async function registerCommands() {
 
   try {
     const commandData = Array.from(client.commands.values()).map(command => command.data.toJSON());
-
     console.log('Sending slash commands to Discord API...');
     const response = await fetch(url, {
       method: 'PUT',
