@@ -6,7 +6,7 @@ const{successContainer, failureContainer,trainingContainer,hasHostRole, postToCh
 
 module.exports = {
 data: new SlashCommandBuilder()
-.setName('host-training')
+.setName('training-host')
 .setDescription('[THP] Command to host a Training')
 .addIntegerOption(o=>
     o

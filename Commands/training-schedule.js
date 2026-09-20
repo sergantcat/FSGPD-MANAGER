@@ -11,7 +11,7 @@ module.exports = {
         .addStringOption(o => o.setName('training').setDescription('Training').setRequired(true).setAutocomplete(true))
         .addStringOption(o => o.setName('reason').setDescription('Reason').setRequired(true)))
     .addSubcommand(sub =>
-      sub.setName('timechange').setDescription('Change training time')
+      sub.setName('changetime').setDescription('Change training time')
         .addStringOption(o => o.setName('training').setDescription('Training').setRequired(true).setAutocomplete(true))
         .addIntegerOption(o => o.setName('newtime').setDescription('New Unix timestamp').setRequired(true)))
     .addSubcommand(sub =>
